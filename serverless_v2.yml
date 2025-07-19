@@ -1,0 +1,33 @@
+org: rolandodiaz
+service: api-alumnos-rds-v2
+
+provider:
+  name: aws
+  runtime: python3.13
+  memorySize: 1024
+  timeout: 20
+  iam:
+    role: arn:aws:iam::409362080365:role/LabRole
+    roleStatements:
+      - Effect: Allow
+        Action:
+          - secretsmanager:GetSecretValue
+          - secretsmanager:DescribeSecret
+        Resource: 
+          - arn:aws:secretsmanager:${aws:region}:${aws:accountId}:secret:rds-mysql-alumnos-*
+  environment:
+    DB_SECRET_NAME: rds-mysql-alumnos-${sls:stage}
+    DB_NAME: ${sls:stage}
+
+functions:
+  listar:
+    handler: ListarAlumnos_v2.lambda_handler
+    package:
+      include:
+        - ./**  # Incluir todo el contenido del directorio
+    events:
+      - http:
+          path: /alumnos/listar
+          method: get
+          cors: true
+          integration: lambda
